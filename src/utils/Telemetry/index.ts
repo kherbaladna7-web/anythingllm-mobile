@@ -3,6 +3,7 @@ import { getAnalytics, logEvent, setAnalyticsCollectionEnabled } from '@react-na
 import { getCrashlytics, log as logCrashlytics, recordError, setCrashlyticsCollectionEnabled } from '@react-native-firebase/crashlytics'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isDebugMode } from '@/utils/constants';
+import DeviceInfo from 'react-native-device-info';
 
 /** AsyncStorage key holding "false" once the user opts out under Settings > Utility > Anonymous telemetry */
 const TELEMETRY_ENABLED_KEY = 'anythingllm_telemetry_enabled';
@@ -84,6 +85,11 @@ class Telemetry {
     constructor() {
         if (Telemetry.instance) return Telemetry.instance;
         Telemetry.instance = this;
+        // The personal fork has no Firebase project configured.
+        if (DeviceInfo.getBundleId() === 'com.anythingllm.personal') {
+            this.enabled = false;
+            return;
+        }
         this.analytics = getAnalytics(getApp());
         // Creating the Crashlytics instance installs its global JS error handler, so fatal JS
         // errors and native crashes are reported with their message and stack. Follows the same opt-out.
@@ -138,6 +144,7 @@ class Telemetry {
      */
     async setEnabled(enabled: boolean): Promise<void> {
         await this.ready;
+        if (!this.analytics || !this.crashlytics) return;
         if (enabled === this.enabled) return;
         if (!enabled) this.logEvent(this.CUSTOM_EVENTS.DISABLED_TELEMETRY);
         this.enabled = enabled;

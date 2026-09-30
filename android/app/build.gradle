@@ -3,8 +3,11 @@ apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 apply plugin: "kotlin-kapt"
 apply plugin: "io.objectbox"
-apply plugin: 'com.google.gms.google-services'
-apply plugin: 'com.google.firebase.crashlytics'
+def personalBuild = project.findProperty('personalBuild') == 'true'
+if (!personalBuild) {
+    apply plugin: 'com.google.gms.google-services'
+    apply plugin: 'com.google.firebase.crashlytics'
+}
 
 apply from: "../../node_modules/react-native-config/android/dotenv.gradle"
 
@@ -41,7 +44,7 @@ android {
 
     namespace "com.anythingllm"
     defaultConfig {
-        applicationId "com.anythingllm"
+        applicationId(personalBuild ? "com.anythingllm.personal" : "com.anythingllm")
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 91
@@ -71,12 +74,17 @@ android {
         release {
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.release
+            // Personal preview only: the checked-in debug key is not a production signing key.
+            signingConfig(personalBuild ? signingConfigs.debug : signingConfigs.release)
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
             // Ship native debug symbols in the AAB so Play Console can symbolicate native (llama.rn) crashes
             ndk { debugSymbolLevel 'FULL' }
         }
+    }
+
+    if (personalBuild) {
+        sourceSets.release.manifest.srcFile 'src/personal/AndroidManifest.xml'
     }
 
     aaptOptions {
@@ -148,5 +156,3 @@ project.ext.vectoricons = [
 ]
 
 apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")
-
-
