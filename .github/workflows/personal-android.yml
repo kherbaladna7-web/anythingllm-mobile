@@ -35,6 +35,7 @@ jobs:
         run: npm run translations:verify
       - name: Run personal startup regression test
         run: npm test -- --runInBand src/utils/Telemetry/__tests__/personal.test.ts
+      - uses: android-actions/setup-android@v3
       - name: Install Android SDK components
         run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.1.12297006'
       - name: Build standalone personal APK
